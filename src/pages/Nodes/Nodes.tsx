@@ -166,9 +166,9 @@ export const Nodes = () => {
                   language,
                 )}
               </option>
-              {row.original.plotID && (
+              {row.original.plotID != null && row.original.plotDescription != null && (
                 <option value={row.original.plotID}>
-                  {getValue() as string} (current)
+                  {row.original.plotDescription} (current)
                 </option>
               )}
               {availablePlots.map((plot) => (
