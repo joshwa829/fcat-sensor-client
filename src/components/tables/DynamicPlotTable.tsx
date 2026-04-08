@@ -13,17 +13,19 @@ export const columnFactory: ({
     setSelectedPlot,
     selectedPlot,
     language,
+    useCelsius,
 }: {
     selectedPlot: string | null;
     setSelectedPlot: (val: string | null) => void;
     language: Language;
+    useCelsius: boolean;
 }) => ColumnDef<
     Plot & {
         node: SensorNode;
         sensors: Array<Sensor>;
         lastMeasurements: Array<Measurement>;
     }
->[] = ({ setSelectedPlot, selectedPlot, language }) => [
+>[] = ({ setSelectedPlot, selectedPlot, language, useCelsius }) => [
     {
         header: decodeCombined('[en]Plot ID[es]ID de Parcela', language),
         accessorKey: 'id',
@@ -87,6 +89,7 @@ export const columnFactory: ({
                     lastMeasurements={cell.row.original.lastMeasurements}
                     sensors={cell.row.original.sensors}
                     plotId={cell.row.original.id}
+                    useCelsius={useCelsius}
                 />
             );
         },
@@ -99,15 +102,17 @@ export const DynamicPlotTable = ({
     selectedPlot,
     setSelectedPlot,
     language,
+    useCelsius,
 }: {
     data: DynamicTableData;
     selectedPlot: string | null;
     setSelectedPlot: (val: string | null) => void;
     language: Language;
+    useCelsius: boolean;
 }) => (
     <div>
         <DataTable
-            columns={columnFactory({ setSelectedPlot, selectedPlot, language })}
+            columns={columnFactory({ setSelectedPlot, selectedPlot, language, useCelsius })}
             data={data}
             highlightRow={(row) => row.id === selectedPlot}
         />

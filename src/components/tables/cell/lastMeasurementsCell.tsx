@@ -36,14 +36,18 @@ const cleanSensorName = (name: string) => {
   return match ? match[1] : name;
 };
 
+const toFahrenheit = (celsius: number) => (celsius * 9) / 5 + 32;
+
 export const LastMeasurementsCell = ({
   lastMeasurements,
   sensors,
   plotId,
+  useCelsius,
 }: {
   lastMeasurements: Array<Measurement>;
   sensors: Array<Sensor>;
   plotId: string;
+  useCelsius: boolean;
 }) => {
   const { language } = useLanguage();
   const [openSensorID, setOpenSensorID] = useState<string | null>(null);
@@ -100,6 +104,10 @@ export const LastMeasurementsCell = ({
       {lastMeasurements.map((measurement) => {
         const sensor = sensors.find((s) => s.id.toString() === measurement.sensorID);
         const sensorName = cleanSensorName(sensor?.name || '');
+        const isTemperature = sensorName === 'Temperature';
+        const rawValue = parseFloat(measurement.data);
+        const displayValue = isTemperature && !useCelsius ? toFahrenheit(rawValue) : rawValue;
+        const displayUnit = isTemperature ? (useCelsius ? '°C' : '°F') : sensor?.description;
         const valuePercentage = sensor
           ? ((parseFloat(measurement.data) - sensor.typicalRange[0]) /
               (sensor.typicalRange[1] - sensor.typicalRange[0])) *
@@ -130,9 +138,9 @@ export const LastMeasurementsCell = ({
                   </div>
                   <div className="flex flex-row gap-2">
                     <div className="font-bold">
-                      {parseFloat(measurement.data).toFixed(2)}
+                      {displayValue.toFixed(2)}
                     </div>
-                    <div>{sensor?.description}</div>
+                    <div>{displayUnit}</div>
                   </div>
                 </div>
               </DialogTrigger>
