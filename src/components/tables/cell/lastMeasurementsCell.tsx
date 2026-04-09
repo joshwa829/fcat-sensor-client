@@ -82,7 +82,7 @@ export const LastMeasurementsCell = ({
           const field = sensorMap[id];
           if (field && values[index] !== undefined) {
             const value = parseFloat(values[index]);
-            (grouped[time] as any)[field] = value;
+            (grouped[time] as any)[field] = field === 'temperature' && !useCelsius ? toFahrenheit(value) : value;
           }
         });
       });
@@ -97,7 +97,7 @@ export const LastMeasurementsCell = ({
     } finally {
       setLoading(false);
     }
-  }, [plotId]);
+  }, [plotId, useCelsius]);
 
   return (
     <div className="flex flex-row flex-wrap">
@@ -108,10 +108,10 @@ export const LastMeasurementsCell = ({
         const rawValue = parseFloat(measurement.data);
         const displayValue = isTemperature && !useCelsius ? toFahrenheit(rawValue) : rawValue;
         const displayUnit = isTemperature ? (useCelsius ? '°C' : '°F') : sensor?.description;
+        const rangeMin = isTemperature && !useCelsius ? toFahrenheit(sensor?.typicalRange[0] ?? 0) : (sensor?.typicalRange[0] ?? 0);
+        const rangeMax = isTemperature && !useCelsius ? toFahrenheit(sensor?.typicalRange[1] ?? 1) : (sensor?.typicalRange[1] ?? 1);
         const valuePercentage = sensor
-          ? ((parseFloat(measurement.data) - sensor.typicalRange[0]) /
-              (sensor.typicalRange[1] - sensor.typicalRange[0])) *
-            100
+          ? ((displayValue - rangeMin) / (rangeMax - rangeMin)) * 100
           : 0;
 
         return (
@@ -161,7 +161,7 @@ export const LastMeasurementsCell = ({
                         <YAxis
                           unit={
                             selectedSensorName === 'Temperature'
-                              ? '°F'
+                              ? (useCelsius ? '°C' : '°F')
                               : selectedSensorName === 'Humidity'
                               ? '%'
                               : selectedSensorName === 'Light Coverage'
