@@ -5,7 +5,7 @@ import { LucideBatteryWarning } from 'lucide-react';
 import { SensorNodeCell } from './cell/sensorNodeCell';
 import { Progress } from '../ui/progress';
 import { LastMeasurementsCell } from './cell/lastMeasurementsCell';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LastSeenCell } from './cell/lastSeenCell';
 import { Language } from '@/LocalizationProvider';
 import { decodeCombined } from '@/lib/utils';
@@ -13,26 +13,28 @@ export const columnFactory: ({
     setSelectedPlot,
     selectedPlot,
     language,
-    useCelsius,
 }: {
     selectedPlot: string | null;
     setSelectedPlot: (val: string | null) => void;
     language: Language;
-    useCelsius: boolean;
 }) => ColumnDef<
     Plot & {
-        node: SensorNode;
+        node: SensorNode | null;
         sensors: Array<Sensor>;
         lastMeasurements: Array<Measurement>;
     }
->[] = ({ setSelectedPlot, selectedPlot, language, useCelsius }) => [
+>[] = ({ setSelectedPlot, selectedPlot, language }) => [
     {
         header: decodeCombined('[en]Plot ID[es]ID de Parcela', language),
         accessorKey: 'id',
     },
     {
         header: decodeCombined('[en]Node[es]Nodo', language),
-        cell: (cell) => <SensorNodeCell plotId={cell.getValue() as string} />,
+        cell: (cell) => {
+            const nodeID = cell.getValue() as string | null;
+            if (!nodeID) return decodeCombined('[en]No Node Assigned[es]Ningún nodo asignado', language);
+            return <SensorNodeCell plotId={nodeID} />;
+        },
         accessorKey: 'nodeID',
     },
     {
@@ -41,11 +43,11 @@ export const columnFactory: ({
     },
     {
         header: decodeCombined('[en]Last Seen[es]Última vez vista', language),
-        cell: (cell) => (
-            <LastSeenCell
-                lastSeen={new Date(cell.row?.original?.lastMeasurements[0]?.createdAt)}
-            />
-        ),
+        cell: (cell) => {
+            const lastMeasurement = cell.row?.original?.lastMeasurements[0];
+            if (!lastMeasurement) return '—';
+            return <LastSeenCell lastSeen={new Date(lastMeasurement.createdAt)} />;
+        },
     },
     {
         header: decodeCombined('[en]Location[es]Ubicación', language),
@@ -81,15 +83,12 @@ export const columnFactory: ({
             language,
         ),
         cell: (cell) => {
-            console.log('Last Measurements Cell Row Original:', cell.row.original);
-            console.log('Last Measurements Cell Plot ID:', cell.row.original.id);
-
+            if (cell.row.original.lastMeasurements.length === 0) return '—';
             return (
                 <LastMeasurementsCell
                     lastMeasurements={cell.row.original.lastMeasurements}
                     sensors={cell.row.original.sensors}
                     plotId={cell.row.original.id}
-                    useCelsius={useCelsius}
                 />
             );
         },
@@ -102,26 +101,34 @@ export const DynamicPlotTable = ({
     selectedPlot,
     setSelectedPlot,
     language,
-    useCelsius,
 }: {
     data: DynamicTableData;
     selectedPlot: string | null;
     setSelectedPlot: (val: string | null) => void;
     language: Language;
-    useCelsius: boolean;
-}) => (
-    <div>
-        <DataTable
-            columns={columnFactory({ setSelectedPlot, selectedPlot, language, useCelsius })}
-            data={data}
-            highlightRow={(row) => row.id === selectedPlot}
-        />
-    </div>
-);
+}) => {
+    const columns = useMemo(
+        () => columnFactory({ setSelectedPlot, selectedPlot, language }),
+        [setSelectedPlot, selectedPlot, language],
+    );
+    const highlightRow = useCallback(
+        (row: DynamicTableData[number]) => row.id === selectedPlot,
+        [selectedPlot],
+    );
+    return (
+        <div>
+            <DataTable
+                columns={columns}
+                data={data}
+                highlightRow={highlightRow}
+            />
+        </div>
+    );
+};
 
 export type DynamicTableData = Array<
     Plot & {
-        node: SensorNode;
+        node: SensorNode | null;
         sensors: Array<Sensor>;
         lastMeasurements: Array<Measurement>;
     }
