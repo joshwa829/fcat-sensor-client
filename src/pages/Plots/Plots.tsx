@@ -80,7 +80,6 @@ export const Plots = () => {
 
   // Variable that will control which map is showing
   const [mapToggle, setMapToggle] = useState(false);
-  const [useCelsius, setUseCelsius] = useState(true);
 
   return (
     <>
@@ -102,15 +101,6 @@ export const Plots = () => {
                   checked={mapToggle}
                   onClick={() => setMapToggle(!mapToggle)}
                 />
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="font-medium">°F</label>
-                <Switch
-                  id="tempSwitch"
-                  checked={useCelsius}
-                  onClick={() => setUseCelsius(!useCelsius)}
-                />
-                <label className="font-medium">°C</label>
               </div>
             </div>
           </div>
@@ -135,7 +125,6 @@ export const Plots = () => {
             selectedPlot={selectedPlot}
             data={tableData}
             language={language}
-            useCelsius={useCelsius}
           />
         </div>
       </div>
